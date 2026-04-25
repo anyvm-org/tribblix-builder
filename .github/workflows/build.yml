@@ -1,0 +1,75 @@
+name: "Build"
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - '*.sh'
+      - '.github/workflows/build.yml'
+      - '*.txt'
+      - 'conf/*'
+      - 'hooks/*'
+  pull_request:
+    branches:
+      - '*'
+    paths:
+      - '*.sh'
+      - '.github/workflows/build.yml'
+      - '*.txt'
+      - 'conf/*'
+      - 'hooks/*'
+  workflow_dispatch:
+
+  release:
+    types: [ created ]
+
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["0m39"]
+    runs-on: ubuntu-24.04
+    env:
+      SEC_VBOX : ${{ vars.SEC_VBOX }}
+    steps:
+#    - name: Free Disk Space (Ubuntu)
+#      uses: jlumbroso/free-disk-space@main
+#      with:
+#        # this might remove tools that are actually needed,
+#        # if set to "true" but frees about 6 GB
+#        tool-cache: false
+    - uses: actions/checkout@v6
+    - name: Creating Web console
+      uses: anyvm-org/cf-tunnel@v0
+      id: tunnel
+      with:
+        protocol: http
+        port: 8000
+    - run: |
+        bash build.sh conf/tribblix-${{ matrix.os }}.conf
+    - name: Upload Release Asset
+      if: "contains(github.ref, 'refs/tags/')"
+      id: upload-release-asset
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: |
+          tribblix-${{ matrix.os }}.qcow2.zst*
+          tribblix-${{ matrix.os }}-id_rsa.pub
+          tribblix-${{ matrix.os }}-host.id_rsa
+          tribblix-${{ matrix.os }}.xml
+
+
