@@ -1,0 +1,3 @@
+# Placeholder — the install flow is driven by hooks/installOpts.sh via
+# VNC keystrokes (Tribblix has no bsdinstall-style script mode), so this
+# file exists only to satisfy build.sh's `VM_OPTS` path check.
