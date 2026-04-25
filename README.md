@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/anyvm-org/tribblix-builder/actions/workflows/build.yml/badge.svg)](https://github.com/anyvm-org/tribblix-builder/actions/workflows/build.yml)
 
-Latest: v2.0.1
+Latest: v2.0.0
 
 
 The image builder for `tribblix`
