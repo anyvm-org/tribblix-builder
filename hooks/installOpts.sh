@@ -20,11 +20,11 @@
 # Live ISO asks for a keyboard layout first ("To select the keyboard
 # layout, enter a number [default 47]:"). Default 47 = US-English; just
 # press Enter to accept it, then fall through to the login prompt.
-waitForText "keyboard layout" 60
+waitForText "keyboard layout" 300
 sleep 2
 inputKeys "enter"
 
-waitForText "login:" 60
+waitForText "login:" 300
 
 sleep 3
 
