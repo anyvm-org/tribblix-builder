@@ -10,12 +10,17 @@ svcadm disable svc:/system/filesystem/autofs:default
 # instance 1 and NWAM does not auto-DHCP it -- the VM boots without an
 # IP and SSH is unreachable.
 #
-# Switch off NWAM and turn on the legacy physical-network service so a
-# single owner manages the NICs. Then the /etc/init.d/anyvm-net script
-# below plumbs and DHCPs every link the kernel finds, regardless of its
-# instance name.
-svcadm disable svc:/network/physical:nwam 2>/dev/null || true
-svcadm enable  svc:/network/physical:default 2>/dev/null || true
+# IMPORTANT: do NOT touch network/physical:nwam from this script. Doing so
+# tears down the NIC that this SSH session is riding on, the parent
+# `ssh tribblix sh<postBuild.sh` then hangs forever waiting for EOF, and
+# build.sh stalls. Tried it -- it raced inconsistently and locked up
+# ~half the runs.
+#
+# Instead, ship a tiny rc3.d/S99 script that, at every boot, walks every
+# physical link the kernel found and `ifconfig plumb up; ifconfig dhcp
+# start`s it. NWAM only manages NICs whose instance name matches its
+# stored profile (e1000g0); a NIC at e1000g1 is invisible to NWAM, so
+# our `ifconfig` doesn't fight anyone for it.
 
 cat > /etc/init.d/anyvm-net <<'EOF'
 #!/bin/sh
@@ -59,4 +64,3 @@ echo "nameserver 9.9.9.9" >> /etc/resolv.conf
 # the ignore list (same pattern as omnios-builder/hooks/postBuild.sh).
 sed -i 's/^PARAM_REQUEST_LIST=\(.*\),6\(,.*\)$/PARAM_REQUEST_LIST=\1\2/; s/^PARAM_REQUEST_LIST=6,\(.*\)$/PARAM_REQUEST_LIST=\1/; s/^PARAM_REQUEST_LIST=\(.*\),6$/PARAM_REQUEST_LIST=\1/' /etc/default/dhcpagent 2>/dev/null || true
 sed -i 's/^PARAM_IGNORE_LIST=$/PARAM_IGNORE_LIST=6/' /etc/default/dhcpagent 2>/dev/null || true
-
