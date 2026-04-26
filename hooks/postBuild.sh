@@ -11,16 +11,21 @@ svcadm disable svc:/system/filesystem/autofs:default
 # IP and SSH is unreachable.
 #
 # IMPORTANT: do NOT touch network/physical:nwam from this script. Doing so
-# tears down the NIC that this SSH session is riding on, the parent
-# `ssh tribblix sh<postBuild.sh` then hangs forever waiting for EOF, and
-# build.sh stalls. Tried it -- it raced inconsistently and locked up
-# ~half the runs.
+# tears down the NIC that this SSH session is riding on; the parent
+# `ssh tribblix sh<postBuild.sh` then hangs waiting for EOF and build.sh
+# stalls.
 #
-# Instead, ship a tiny rc3.d/S99 script that, at every boot, walks every
-# physical link the kernel found and `ifconfig plumb up; ifconfig dhcp
-# start`s it. NWAM only manages NICs whose instance name matches its
-# stored profile (e1000g0); a NIC at e1000g1 is invisible to NWAM, so
-# our `ifconfig` doesn't fight anyone for it.
+# Instead, ship a tiny rc3.d/S99 script. NWAM only manages NICs whose
+# instance name matches its stored profile (e1000g0); a NIC at e1000g1
+# is invisible to NWAM, so plain `ifconfig` doesn't fight anyone for it.
+#
+# The script also rewrites /etc/resolv.conf with public resolvers AFTER
+# `ifconfig dhcp start`, because dhcpagent overwrites resolv.conf with
+# whatever the lease's DNS option (6) says. On some hosts (notably
+# GitHub-Actions runners) libvirt's dnsmasq -> host-DNS forwarding chain
+# is broken, leaving the guest with `nameserver 192.168.122.1` that
+# cannot resolve anything; zap then fails with "Download ... has wrong
+# size" because the fetch lands on nothing.
 
 cat > /etc/init.d/anyvm-net <<'EOF'
 #!/bin/sh
@@ -33,6 +38,14 @@ start)
         /usr/sbin/ifconfig "$link" plumb up 2>/dev/null
         /usr/sbin/ifconfig "$link" dhcp start 2>/dev/null
     done
+    # Give dhcpagent a moment to touch resolv.conf, then clobber it with
+    # public resolvers we control. Idempotent across reboots.
+    sleep 5
+    cat > /etc/resolv.conf <<RESOLV
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+nameserver 9.9.9.9
+RESOLV
     ;;
 stop)
     ;;
@@ -47,9 +60,9 @@ chmod +x /etc/init.d/anyvm-net
 ln -sf /etc/init.d/anyvm-net /etc/rc3.d/S99anyvm-net
 
 
-# DNS resolvers. anyvm.py runs the QEMU user-mode network with no DNS
-# advertised over DHCP; without a static resolv.conf, name lookups fail
-# and NTP / package fetches hang for the full timeout each call.
+# Static resolv.conf right now (this SSH session and the next one before
+# the first reboot use it). The init script above keeps it correct on
+# every subsequent boot.
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
@@ -57,10 +70,22 @@ echo "nameserver 9.9.9.9" >> /etc/resolv.conf
 
 
 # anyvm.py builds the netdev with `ipv6=off`. If dhcpagent still requests
-# option 6 (DNS) over IPv6 or accepts an IPv6 lease, it can wait the full
-# IPv6 negotiation timeout (~30s) per boot before the IPv4 lease lands and
-# sshd becomes reachable -- anyvm.py's SSH wait loop sees that as "VM
-# never came up". Strip option 6 from the request list and add IPv6 to
-# the ignore list (same pattern as omnios-builder/hooks/postBuild.sh).
-sed -i 's/^PARAM_REQUEST_LIST=\(.*\),6\(,.*\)$/PARAM_REQUEST_LIST=\1\2/; s/^PARAM_REQUEST_LIST=6,\(.*\)$/PARAM_REQUEST_LIST=\1/; s/^PARAM_REQUEST_LIST=\(.*\),6$/PARAM_REQUEST_LIST=\1/' /etc/default/dhcpagent 2>/dev/null || true
-sed -i 's/^PARAM_IGNORE_LIST=$/PARAM_IGNORE_LIST=6/' /etc/default/dhcpagent 2>/dev/null || true
+# option 6 over IPv6 or accepts an IPv6 lease, it can wait the full IPv6
+# negotiation timeout (~30s) per boot before the IPv4 lease lands.
+#
+# illumos /usr/bin/sed has no -i and /usr/bin/awk is old-awk (no gsub).
+# Use /usr/bin/nawk explicitly, which has been on illumos forever.
+if [ -f /etc/default/dhcpagent ]; then
+    /usr/bin/nawk '
+        /^PARAM_REQUEST_LIST=/ {
+            gsub(/,6,/, ",", $0)
+            sub(/=6,/, "=", $0)
+            sub(/,6$/, "", $0)
+            sub(/=6$/, "=", $0)
+        }
+        /^PARAM_IGNORE_LIST=$/ { $0 = "PARAM_IGNORE_LIST=6" }
+        { print }
+    ' /etc/default/dhcpagent > /tmp/dhcpagent.new \
+        && cp /tmp/dhcpagent.new /etc/default/dhcpagent \
+        && rm -f /tmp/dhcpagent.new
+fi
