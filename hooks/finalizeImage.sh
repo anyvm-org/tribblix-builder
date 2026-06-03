@@ -29,7 +29,12 @@ finalizeImage() {
   local monport="${FZ_MONPORT:-55571}"
   local vmname="${osname:-tribblix}-finalize"
   local vnc="127.0.0.1:${disp}"
-  local accel="kvm"; [ -e /dev/kvm ] || accel="tcg"
+  # This hook runs qemu DIRECTLY (not via libvirt's sudo), so the build user must
+  # be able to reach /dev/kvm (default root:kvm 0660). Make it accessible if we
+  # can (the build already relies on passwordless sudo); fall back to TCG only if
+  # KVM is truly unavailable, so the swap still works (just slower).
+  if [ -e /dev/kvm ] && [ ! -w /dev/kvm ]; then sudo -n chmod 0666 /dev/kvm 2>/dev/null || true; fi
+  local accel="kvm"; [ -w /dev/kvm ] 2>/dev/null || accel="tcg"
   local serlog="/tmp/${vmname}.serial.log"
   local cap="/tmp/${vmname}.cap.png"
 
