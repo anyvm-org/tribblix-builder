@@ -1,6 +1,9 @@
 # shellcheck shell=bash
-# finalizeImage.sh -- host-side build hook (sourced by build.sh AFTER the build
-# VM has shut down, BEFORE the ISO is removed and the image is exported).
+# host_finalizeImage.sh -- host-side build hook (run by build.py as a plain
+# `bash` subprocess AFTER the build VM has shut down, BEFORE the ISO is removed
+# and the image is exported). The conf's VM_* env vars are inherited; the VM
+# name comes from $VM_OS_NAME (NOT $osname -- that is a build.py global, not
+# exported to this subprocess).
 #
 # Purpose: restore the generic, CPU-neutral /lib/libc.so.1 in the freshly built
 # image so it boots under KVM on ANY x86-64 CPU.
@@ -21,13 +24,13 @@
 # ISO is driven over VNC with vncdotool, syncing on screen text (OCR) at the two
 # slow/variable points (boot->login, package download) and short sleeps elsewhere.
 #
-# Standalone test:  FZ_ISO=x.iso FZ_QCOW=y.qcow2 bash finalizeImage.sh
+# Standalone test:  FZ_ISO=x.iso FZ_QCOW=y.qcow2 bash host_finalizeImage.sh
 finalizeImage() {
-  local iso="${FZ_ISO:-${osname}.iso}"
-  local qcow="${FZ_QCOW:-${osname}.qcow2}"
+  local iso="${FZ_ISO:-${VM_OS_NAME}.iso}"
+  local qcow="${FZ_QCOW:-${VM_OS_NAME}.qcow2}"
   local disp="${FZ_VNCDISP:-58}"            # VNC display N -> TCP 5900+N
   local monport="${FZ_MONPORT:-55571}"
-  local vmname="${osname:-tribblix}-finalize"
+  local vmname="${VM_OS_NAME:-tribblix}-finalize"
   local vnc="127.0.0.1:${disp}"
   # This hook runs qemu DIRECTLY (not via libvirt's sudo), so the build user must
   # be able to reach /dev/kvm (default root:kvm 0660). Make it accessible if we
@@ -148,6 +151,6 @@ finalizeImage() {
   return 0
 }
 
-# build.sh runs under `set -ex`; isolate the hook so a transient failure here
-# (the image is already built) cannot abort the build. Runs with errexit off.
+# Isolate the hook so a transient failure here (the image is already built)
+# cannot abort the build. Runs with errexit off.
 ( set +e; finalizeImage )
