@@ -49,6 +49,6 @@ How to build:
 
     Just clone the repo. and run:
     ```bash
-    bash build.sh conf/tribblix-0m39.conf
+    python3 build.py conf/tribblix-0m39.conf
     ```
    
