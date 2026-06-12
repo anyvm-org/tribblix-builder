@@ -92,3 +92,19 @@ jobs:
           tribblix-${{ matrix.os }}.qemu
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
