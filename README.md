@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/anyvm-org/tribblix-builder/actions/workflows/build.yml/badge.svg)](https://github.com/anyvm-org/tribblix-builder/actions/workflows/build.yml)
 
-Latest: v2.0.4
+Latest: v2.0.5
 
 
 The image builder for `tribblix`
@@ -14,21 +14,7 @@ All the supported releases are here:
 
 | Release | x86_64   |
 |---------|----------|
-| 0m39    |  ✅     |
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+| 0m39    |  ✅ (rsync,scp,nfs)     |
 
 
 
