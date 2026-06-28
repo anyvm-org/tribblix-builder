@@ -15,6 +15,7 @@ All the supported releases are here:
 | Release | x86_64   |
 |---------|----------|
 | 0m39    |  ✅ (rsync,scp,nfs)     |
+| 0m40    |  ✅ (rsync,scp,nfs)     |
 
 
 
@@ -34,6 +35,6 @@ How to build:
 
     Just clone the repo. and run:
     ```bash
-    python3 build.py conf/tribblix-0m39.conf
+    python3 build.py conf/tribblix-0m40.conf
     ```
    
