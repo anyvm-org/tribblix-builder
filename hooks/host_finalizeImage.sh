@@ -26,8 +26,10 @@
 #
 # Standalone test:  FZ_ISO=x.iso FZ_QCOW=y.qcow2 bash host_finalizeImage.sh
 finalizeImage() {
-  local iso="${FZ_ISO:-${VM_OS_NAME}.iso}"
-  local qcow="${FZ_QCOW:-${VM_OS_NAME}.qcow2}"
+  local iso="${FZ_ISO:-${VM_WORKDIR:+${VM_WORKDIR}/}${VM_OS_NAME}.iso}"
+  # build.py routes the working image under build/ (VM_WORK_QCOW); FZ_QCOW
+  # still overrides for standalone testing, then repo-root fallback.
+  local qcow="${FZ_QCOW:-${VM_WORK_QCOW:-${VM_OS_NAME}.qcow2}}"
   local disp="${FZ_VNCDISP:-58}"            # VNC display N -> TCP 5900+N
   local monport="${FZ_MONPORT:-55571}"
   local vmname="${VM_OS_NAME:-tribblix}-finalize"
