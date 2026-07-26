@@ -6,6 +6,7 @@
       "release": "0m39",
       "arch": "x86_64",
       "sync": "rsync,scp,nfs",
+      "shutdown": "/usr/sbin/poweroff",
       "desktop": false,
       "build": true
     },
@@ -14,6 +15,7 @@
       "release": "0m40",
       "arch": "x86_64",
       "sync": "rsync,scp,nfs",
+      "shutdown": "/usr/sbin/poweroff",
       "desktop": false,
       "build": true
     }
