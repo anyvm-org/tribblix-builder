@@ -1,0 +1,21 @@
+{
+  "os": "tribblix",
+  "releases": [
+    {
+      "tag": "0m39",
+      "release": "0m39",
+      "arch": "x86_64",
+      "sync": "rsync,scp,nfs",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "0m40",
+      "release": "0m40",
+      "arch": "x86_64",
+      "sync": "rsync,scp,nfs",
+      "desktop": false,
+      "build": true
+    }
+  ]
+}
