@@ -18,6 +18,15 @@
       "shutdown": "/usr/sbin/poweroff",
       "desktop": false,
       "build": true
+    },
+    {
+      "tag": "0m41",
+      "release": "0m41",
+      "arch": "x86_64",
+      "sync": "rsync,scp,nfs",
+      "shutdown": "/usr/sbin/poweroff",
+      "desktop": false,
+      "build": true
     }
   ]
 }
