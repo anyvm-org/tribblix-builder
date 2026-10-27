@@ -27,6 +27,15 @@
       "shutdown": "/usr/sbin/poweroff",
       "desktop": false,
       "build": true
+    },
+    {
+      "tag": "0m41.1",
+      "release": "0m41.1",
+      "arch": "x86_64",
+      "sync": "rsync,scp,nfs,tar",
+      "shutdown": "/usr/sbin/poweroff",
+      "desktop": false,
+      "build": true
     }
   ]
 }

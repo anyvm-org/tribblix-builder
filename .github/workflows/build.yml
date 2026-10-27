@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["0m39", "0m40", "0m41"]
+        os: ["0m39", "0m40", "0m41", "0m41.1"]
     runs-on: ubuntu-26.04
     steps:
 #    - name: Free Disk Space (Ubuntu)
